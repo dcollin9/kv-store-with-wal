@@ -20,3 +20,8 @@ linters:
 
 run:
   go: '1.23'
+
+skip-files:
+  - ^skip_me\.go$
+  
+

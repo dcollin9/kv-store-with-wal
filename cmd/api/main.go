@@ -1,7 +1,9 @@
+// Package main provides the entry point for the KV store HTTP API server.
 package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,14 +30,15 @@ func main() {
 
 	// Set up HTTP server
 	httpServer := &http.Server{
-		Addr:    ":" + port,
-		Handler: srv.Handler(),
+		Addr:              ":" + port,
+		Handler:           srv.Handler(),
+		ReadHeaderTimeout: 5 * time.Second, // Prevent Slowloris attacks
 	}
 
 	// Start server in a goroutine
 	go func() {
 		fmt.Printf("Server starting on port %s...\n", port)
-		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server failed to start: %v", err)
 		}
 	}()

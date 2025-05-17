@@ -1,3 +1,4 @@
+// Package server contains HTTP handlers and server setup for the KV store API.
 package server
 
 import (
@@ -7,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Handler represents the HTTP server that handles API requests
+// Handler represents the HTTP server that handles API requests.
 type Handler struct {
 	router *gin.Engine
 }
 
-// NewHandler creates and initializes a new server instance
+// NewHandler creates and initializes a new server instance.
 func NewHandler() *Handler {
 	router := gin.Default()
 
@@ -24,12 +25,12 @@ func NewHandler() *Handler {
 	return s
 }
 
-// Handler returns the HTTP handler for the server
+// Handler returns the HTTP handler for the server.
 func (s *Handler) Handler() http.Handler {
 	return s.router
 }
 
-// setupRoutes configures all the routes for the server
+// setupRoutes configures all the routes for the server.
 func (s *Handler) setupRoutes() {
 	subRouter := s.router.Group("/v1")
 	{
@@ -38,6 +39,7 @@ func (s *Handler) setupRoutes() {
 	}
 }
 
+// Get handles requests to retrieve a value by key.
 func (s *Handler) Get(c *gin.Context) {
 	key := c.Param("key")
 	if key == "" {
@@ -62,6 +64,7 @@ func (s *Handler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// Set handles requests to store a key-value pair.
 func (s *Handler) Set(c *gin.Context) {
 	req := service.KVPair{}
 	err := c.BindJSON(&req)

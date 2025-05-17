@@ -1,33 +1,40 @@
+// Package service provides business logic for key-value store operations.
 package service
 
 import (
 	"context"
 	"errors"
+	"fmt"
 )
 
+// Standard errors for the service.
 var (
-	KVStore     map[string]string
-	NotFoundErr = "key not found"
+	// ErrNotFound is returned when a requested key doesn't exist.
+	ErrNotFound = errors.New("key not found")
+
+	// KVStore holds all key-value pairs in memory.
+	KVStore = map[string]string{}
 )
 
+// KVPair represents a key-value pair for JSON serialization.
 type KVPair struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
-func Get(ctx context.Context, key string) (string, error) {
-
+// Get retrieves a value from the store by its key.
+// It returns the value if found, or an error if the key doesn't exist.
+func Get(_ context.Context, key string) (string, error) {
 	if v, ok := KVStore[key]; ok {
 		return v, nil
 	}
 
-	return "", errors.New(NotFoundErr)
-
+	return "", fmt.Errorf("get operation failed: %w", ErrNotFound)
 }
 
-// TODO: how to handle collisions? Probably just overwrite for now tbh
-func Set(ctx context.Context, key, val string) error {
+// Set stores a key-value pair in the in-memory store.
+// It overwrites any existing value for the same key.
+func Set(_ context.Context, key, val string) error {
 	KVStore[key] = val
-
 	return nil
 }

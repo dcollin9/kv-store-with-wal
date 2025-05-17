@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"kv-store-wal/internal/server"
+	"kv-store-wal/internal/service"
 )
 
 const (
@@ -20,6 +21,13 @@ const (
 )
 
 func main() {
+	//  initialize in-memory store
+	err := service.InitStore()
+	if err != nil {
+		fmt.Println("InitStore failed, err: %w", err)
+		os.Exit(1)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort

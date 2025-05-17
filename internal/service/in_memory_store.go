@@ -51,7 +51,7 @@ func Set(_ context.Context, key, val string) error {
 	defer wal.Close()
 
 	// Format with comma delimiter to match recovery function
-	data := []byte(fmt.Sprintf("%s=%s,", key, val))
+	data := []byte(fmt.Sprintf("%s=%s\n", key, val))
 	if _, err := wal.Write(data); err != nil {
 		return fmt.Errorf("failed to write to file: %w", err)
 	}

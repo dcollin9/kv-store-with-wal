@@ -34,7 +34,7 @@ func InitStore() error {
 }
 
 // RecoverFromWAL reads the WAL file and populates the in-memory KVStore
-// It reads the file in chunks of 100 bytes, handling comma-delimited values
+// It reads the file in chunks of 100 bytes, handling newline-delimited values
 func RecoverFromWAL() error {
 	// Open the WAL file for reading
 	walPath := filepath.Join(WALFileName)
@@ -81,41 +81,24 @@ func RecoverFromWAL() error {
 func processBuffer(buffer *bytes.Buffer) {
 	data := buffer.String()
 
-	// Find the last complete record (ending with a comma)
-	lastCommaIndex := strings.LastIndex(data, ",")
-	if lastCommaIndex == -1 {
+	// Find the last complete record (ending with a newline)
+	lastNewlineIndex := strings.LastIndex(data, "\n")
+	if lastNewlineIndex == -1 {
 		// No complete record in buffer yet
 		return
 	}
 
 	// Extract the complete portion
-	completeData := data[:lastCommaIndex+1]
+	completeData := data[:lastNewlineIndex+1]
 
-	// Create a scanner to process each complete record
+	// Process the complete data line by line
 	scanner := bufio.NewScanner(strings.NewReader(completeData))
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-
-		// Look for comma
-		if i := bytes.IndexByte(data, ','); i >= 0 {
-			// We have a complete record
-			return i + 1, data[0:i], nil
-		}
-
-		// If we're at EOF, we have a final, non-terminated record
-		if atEOF {
-			return len(data), data, nil
-		}
-
-		// Request more data
-		return 0, nil, nil
-	})
-
-	// Process each record and update KVStore
 	for scanner.Scan() {
 		record := scanner.Text()
+		if record == "" {
+			continue
+		}
+
 		parts := strings.SplitN(record, "=", 2)
 		if len(parts) == 2 {
 			key, value := parts[0], parts[1]
@@ -124,9 +107,9 @@ func processBuffer(buffer *bytes.Buffer) {
 	}
 
 	// Keep only the incomplete portion in the buffer
-	if lastCommaIndex < len(data)-1 {
+	if lastNewlineIndex < len(data)-1 {
 		buffer.Reset()
-		buffer.WriteString(data[lastCommaIndex+1:])
+		buffer.WriteString(data[lastNewlineIndex+1:])
 	} else {
 		buffer.Reset()
 	}

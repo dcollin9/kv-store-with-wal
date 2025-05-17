@@ -14,3 +14,9 @@ On startup, replay the WAL to reconstruct the in-memory state.
 Keep it single-threaded — no need for concurrency yet.
 
 This mimics the basic architecture of Postgres or InnoDB, where a WAL guarantees durability even if the in-memory state is lost.
+
+
+## Linters
+Run `golangci-lint help linters` to check for all avialable linters.
+
+Run the linting using: `golangci-lint run`

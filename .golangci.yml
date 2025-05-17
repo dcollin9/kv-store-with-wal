@@ -1,0 +1,22 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - godot
+    - bodyclose
+    - err113
+    - errorlint
+    - revive
+    - sqlclosecheck
+    - unparam
+    - importas
+    - gosec
+
+run:
+  go: '1.23'

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"kv-store-wal/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,30 +31,59 @@ func (s *Handler) Handler() http.Handler {
 
 // setupRoutes configures all the routes for the server
 func (s *Handler) setupRoutes() {
-	// Root route
-	s.router.GET("/", s.handleIndex)
-
-	// API routes
-	api := s.router.Group("/api")
+	subRouter := s.router.Group("/v1")
 	{
-		api.GET("/hello", s.handleHello)
+		subRouter.GET("/:key", s.Get)
+		subRouter.POST("/write", s.Set)
 	}
 }
 
-// handleIndex handles the root path
-func (s *Handler) handleIndex(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "KV Store with WAL API is running",
-	})
+func (s *Handler) Get(c *gin.Context) {
+	key := c.Param("key")
+	if key == "" {
+		c.String(http.StatusBadRequest, "Bad Request = key required")
+		return
+	}
+
+	val, err := service.Get(c.Request.Context(), key)
+	if err != nil {
+		c.String(http.StatusNotFound, "Key not found")
+		return
+	}
+
+	type Resp struct {
+		Value string `json:"value"`
+	}
+
+	response := Resp{
+		Value: val,
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
-// handleHello is an example endpoint that accepts HTTP requests
-func (s *Handler) handleHello(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
-			"message": "Hello, world!",
-		},
-	})
+func (s *Handler) Set(c *gin.Context) {
+	req := service.KVPair{}
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if req.Key == "" || req.Value == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "both key and value must be set",
+		})
+		return
+	}
+
+	err = service.Set(c.Request.Context(), req.Key, req.Value)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }

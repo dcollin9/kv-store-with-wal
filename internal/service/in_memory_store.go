@@ -42,6 +42,8 @@ func Get(_ context.Context, key string) (string, error) {
 func Set(_ context.Context, key, val string) error {
 	KVStore[key] = val
 
+	// TODO: if we fail at any point after this, we should unset/revert our in-memory value, since the transaction wasn't committed to the WAL
+
 	// now write the key/val pair to the Write Ahead Log (WAL)
 	walPath := filepath.Join(WALFileName)
 	wal, err := os.OpenFile(walPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

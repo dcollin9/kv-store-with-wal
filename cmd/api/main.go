@@ -21,10 +21,10 @@ const (
 )
 
 func main() {
-	//  initialize in-memory store
-	err := service.InitStore()
+	//  initialize in-memory store and wal connection
+	err := service.Initialize()
 	if err != nil {
-		fmt.Println("InitStore failed, err: %w", err)
+		fmt.Println("Initialize failed, err: %w", err)
 		os.Exit(1)
 	}
 

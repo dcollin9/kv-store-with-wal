@@ -10,9 +10,9 @@ import (
 	"strings"
 )
 
-// InitStore initializes the in-memory key-value store by recovering data from the WAL
+// Initialize initializes the in-memory key-value store by recovering data from the WAL and initializes the wal
 // This function should be called once at application startup
-func InitStore() error {
+func Initialize() error {
 	// Log that we're initializing
 	fmt.Println("Initializing key-value store...")
 
@@ -24,6 +24,11 @@ func InitStore() error {
 	// Recover data from the WAL
 	if err := RecoverFromWAL(); err != nil {
 		return fmt.Errorf("failed to recover from WAL: %w", err)
+	}
+
+	// Initialize the global WAL file for writing
+	if err := InitWAL(); err != nil {
+		return fmt.Errorf("failed to initialize WAL: %w", err)
 	}
 
 	// Log how many items were recovered
@@ -52,6 +57,10 @@ func RecoverFromWAL() error {
 	var buffer bytes.Buffer
 
 	// Read in chunks of 100 bytes
+	// Note - if we have non ASCII characters (1 byte each), we could potentially have issues here,
+	// esp if a special character, e.g., "é", that is more than a single byte. If our 100 byte chunk only includes one of the bytes,
+	// then we'll have an invalid utf-8
+
 	chunk := make([]byte, 100)
 	for {
 		bytesRead, err := wal.Read(chunk)
@@ -106,7 +115,7 @@ func processBuffer(buffer *bytes.Buffer) {
 		}
 	}
 
-	// Keep only the incomplete portion in the buffer
+	// Keep the incomplete portion in the buffer, write the rest
 	if lastNewlineIndex < len(data)-1 {
 		buffer.Reset()
 		buffer.WriteString(data[lastNewlineIndex+1:])

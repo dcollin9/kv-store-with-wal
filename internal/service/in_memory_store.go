@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 )
 
 // WALFileName is the name of the write-ahead log file
@@ -40,23 +38,18 @@ func Get(_ context.Context, key string) (string, error) {
 // Set stores a key-value pair in the in-memory store.
 // It overwrites any existing value for the same key.
 func Set(_ context.Context, key, val string) error {
-	KVStore[key] = val
+	// Write to WAL first (before updating in-memory store)
+	walMutex.Lock()
 
-	// TODO: if we fail at any point after this, we should unset/revert our in-memory value, since the transaction wasn't committed to the WAL
-
-	// now write the key/val pair to the Write Ahead Log (WAL)
-	walPath := filepath.Join(WALFileName)
-	wal, err := os.OpenFile(walPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
-	}
-	defer wal.Close()
-
-	// Format with comma delimiter to match recovery function
 	data := []byte(fmt.Sprintf("%s=%s\n", key, val))
-	if _, err := wal.Write(data); err != nil {
-		return fmt.Errorf("failed to write to file: %w", err)
+	if _, err := walFile.Write(data); err != nil {
+		walMutex.Unlock()
+		return fmt.Errorf("failed to write to WAL: %w", err)
 	}
+	walMutex.Unlock()
+
+	// Only update in-memory store after successful WAL write
+	KVStore[key] = val
 
 	return nil
 }

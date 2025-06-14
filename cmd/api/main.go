@@ -58,6 +58,15 @@ func main() {
 
 	fmt.Println("Server shutting down...")
 
+	fmt.Println("Closing wal...")
+	err = service.CloseWAL()
+	if err != nil {
+		fmt.Println("error closing wal, err: ", err.Error())
+	} else {
+		fmt.Println("Wal closed successfully")
+
+	}
+
 	// Create a deadline for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
